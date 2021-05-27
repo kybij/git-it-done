@@ -2,6 +2,7 @@ var userFormEl = document.querySelector("#user-form");
 var nameInputEl = document.querySelector("#username");
 var repoContainerEl = document.querySelector("#repos-container");
 var repoSearchTerm = document.querySelector("#repo-search-term");
+var languageButtonsEl = document.querySelector("#language-buttons");
 
 var formSubmitHandler = function (event) {
     event.preventDefault();
@@ -16,6 +17,17 @@ var formSubmitHandler = function (event) {
     console.log(event);
 };
 
+var buttonClickHandler = function(event) {
+    // get the language attribute from the clicked element
+    var language = event.target.getAttribute("data-language");
+  
+    if (language) {
+      getFeaturedRepos(language);
+  
+      // clear old content
+      repoContainerEl.textContent = "";
+    }
+  };
 
 var getUserRepos = function (user) {
     //format the github api url
@@ -23,20 +35,37 @@ var getUserRepos = function (user) {
 
     //make a request to the url
     fetch(apiUrl)
-    .then(function (response) {
+        .then(function (response) {
+            if (response.ok) {
+                response.json().then(function (data) {
+                    displayRepos(data, user);
+                });
+            } else {
+                alert("Error: Github User Not Found");
+            }
+        })
+        .catch(function (error) {
+            //notice this .catch() getting chained onto the end of the .then() method
+            alert("Unable to connect to GitHub");
+        });
+};
+
+
+var getFeaturedRepos = function (language) {
+    var apiUrl = "https://api.github.com/search/repositories?q=" + language + "+is:featured&sort=help-wanted-issues";
+
+    fetch(apiUrl).then(function (response) {
         if (response.ok) {
             response.json().then(function (data) {
-                displayRepos(data, user);
+                displayRepos(data.items, language)
             });
+
         } else {
-            alert("Error: Github User Not Found");
+            alert("Error: GitHub User Not Found")
         }
-    })
-    .catch(function(error) {
-        //notice this .catch() getting chained onto the end of the .then() method
-        alert("Unable to connect to GitHub");
     });
-};
+}
+
 
 var displayRepos = function (repos, searchTerm) {
     // check if api returned any repos
@@ -86,4 +115,7 @@ var displayRepos = function (repos, searchTerm) {
     }
 };
 
+
+
 userFormEl.addEventListener("submit", formSubmitHandler)
+languageButtonsEl.addEventListener("click", buttonClickHandler)
